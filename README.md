@@ -1,2 +1,2 @@
 # dash-acidentes
-Projeto final da disciplina de programação para a  Web
+Projeto final da disciplina de programação para a Web.
