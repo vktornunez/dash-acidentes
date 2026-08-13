@@ -1,59 +1,231 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Acidentes nas Rodovias Federais Brasileiras</title>
-</head>
+    <title>Painel de Acidentes nas Rodovias Federais — PRF 2025</title>
+    
+    <!-- Google Fonts: Inter e JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+    
+    <!-- Estilos Customizados (Design Dark Institucional) -->
+    <link rel="stylesheet" href="css\style.css">
 
+    <!-- Chart.js e Leaflet JS -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+</head>
 <body>
-    <!-- CABEÇALHO PRINCIPAL -->
-    <header>
-        <h1>Acidentes nas Rodovias Federais Brasileiras</h1>
-        <nav>
-            <ul>
-                <li><a href="index.html">Home</a></li>
-                <li><a href="indicadores">Visão Geral</a></li>
-                <li><a href="causas">Análise das Causas</a></li>
-                <li><a href="ocorrencias">Ocorrências</a></li>
-                <li><a href="paginas\sobre.html">Sobre a Equipe</a></li>
-            </ul>
-        </nav>    
+
+        <header class="navbar">
+        <div class="brand">
+            <div class="logo-badge">PRF</div>
+            <div class="brand-text">
+                <h1>Painel Nacional de Acidentes em Rodovias Federais</h1>
+                <span class="subtitle">POLÍCIA RODOVIÁRIA FEDERAL — ANÁLISE DE RISCO 2025</span>
+            </div>
+        </div>
+        <div class="nav-controls">
+            <div class="status-indicator">
+                <span class="pulse-dot"></span>
+                <span id="api-status-text">API Conectada</span>
+            </div>
+            <button class="btn-refresh" id="btn-refresh" title="Atualizar Dados">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/></svg>
+                Atualizar
+            </button>
+        </div>
     </header>
 
-    <!-- CONTEÚDO PRINCIPAL -->
-    <main>
-        <section id="Home">
-            <h2>Bem-vindo ao nosso site!</h2>
-            <p>Este site fornece informações detalhadas sobre acidentes nas rodovias federais brasileiras, incluindo estatísticas, análises de causas e ocorrências.</p>
-        </section>
+    <!-- Filtros Globais -->
+    <section class="filters-bar">
+        <div class="filter-group">
+            <label for="filter-uf">Estado (UF):</label>
+            <select id="filter-uf">
+                <option value="">Todos os Estados (Nacional)</option>
+                <option value="AC">Acre (AC)</option>
+                <option value="AL">Alagoas (AL)</option>
+                <option value="AM">Amazonas (AM)</option>
+                <option value="AP">Aapá (AP)</option>
+                <option value="BA">Bahia (BA)</option>
+                <option value="CE">Ceará (CE)</option>
+                <option value="DF">Distrito Federal (DF)</option>
+                <option value="ES">Espírito Santo (ES)</option>
+                <option value="GO">Goiás (GO)</option>
+                <option value="MA">Maranhão (MA)</option>
+                <option value="MG">Minas Gerais (MG)</option>
+                <option value="MS">Mato Grosso do Sul (MS)</option>
+                <option value="MT">Mato Grosso (MT)</option>
+                <option value="PA">Pará (PA)</option>
+                <option value="PB">Paraíba (PB)</option>
+                <option value="PE">Pernambuco (PE)</option>
+                <option value="PI">Piauí (PI)</option>
+                <option value="PR">Paraná (PR)</option>
+                <option value="RJ">Rio de Janeiro (RJ)</option>
+                <option value="RN">Rio Grande do Norte (RN)</option>
+                <option value="RO">Rondônia (RO)</option>
+                <option value="RR">Roraima (RR)</option>
+                <option value="RS">Rio Grande do Sul (RS)</option>
+                <option value="SC">Santa Catarina (SC)</option>
+                <option value="SE">Sergipe (SE)</option>
+                <option value="SP">São Paulo (SP)</option>
+                <option value="TO">Tocantins (TO)</option>
+            </select>
+        </div>
+        <div class="filter-group">
+            <label for="filter-br">Rodovia Federal (BR):</label>
+            <input type="number" id="filter-br" placeholder="Ex: 116, 101, 381" min="1" max="999">
+        </div>
+        <button id="btn-apply-filters" class="btn-primary">Filtrar Dados</button>
+        <button id="btn-reset-filters" class="btn-secondary">Limpar</button>
+    </section>
 
-        <section id="Indicadores">
-            <h2>Visão Geral</h2>
-            <p>Aqui você encontrará uma visão geral dos principais indicadores relacionados aos acidentes nas rodovias federais brasileiras.</p>
-        </section>
+    <!-- Módulo 1: KPIs Principais -->
+    <main class="dashboard-grid">
+        <div class="kpi-card danger">
+            <div class="kpi-header">
+                <span class="kpi-title">TOTAL DE ACIDENTES</span>
+                <span class="kpi-icon">🚗</span>
+            </div>
+            <div class="kpi-value" id="kpi-total-acidentes">45.532</div>
+            <div class="kpi-footer">Visão Nacional Consolidada 2025</div>
+        </div>
 
-        <section id="Causas">
-            <h2>Análise das Causas</h2>
-            <p>Explore as análises detalhadas das causas dos acidentes, incluindo fatores humanos, condições da estrada e outros elementos contribuintes.</p>
-        </section>
-        
-        <section id="Ocorrencias">
-            <h2>Ocorrências</h2>
-            <p>Confira as ocorrências registradas nas rodovias federais, com informações sobre localização, gravidade e outros detalhes relevantes.</p>
-        </section>
+        <div class="kpi-card fatal">
+            <div class="kpi-header">
+                <span class="kpi-title">VÍTIMAS FATAIS</span>
+                <span class="kpi-icon">💀</span>
+            </div>
+            <div class="kpi-value" id="kpi-total-mortos">3.593</div>
+            <div class="kpi-footer">Vítimas Fatais Registradas</div>
+        </div>
 
-        <section id="Equipe">
-            <h2>Sobre a Equipe</h2>
-            <p>Conheça a equipe responsável pelo desenvolvimento e manutenção deste site.</p>
-        </section>
+        <div class="kpi-card warning">
+            <div class="kpi-header">
+                <span class="kpi-title">TOTAL DE FERIDOS</span>
+                <span class="kpi-icon">🚑</span>
+            </div>
+            <div class="kpi-value" id="kpi-total-feridos">62.904</div>
+            <div class="kpi-footer" id="kpi-detalhe-feridos">14.200 graves | 48.704 leves</div>
+        </div>
+
+        <div class="kpi-card info">
+            <div class="kpi-header">
+                <span class="kpi-title">ÍNDICE DE RISCO (ICR)</span>
+                <span class="kpi-icon">📊</span>
+            </div>
+            <div class="kpi-value" id="kpi-icr-medio">4,45</div>
+            <div class="kpi-footer">Pesos: 0 ileso, 1 leve, 5 grave, 15 morto</div>
+        </div>
     </main>
 
-    <!-- RODAPÉ -->
-    <footer>
-        <p>&copy; 2026 - Projeto Final da Disciplina de Programação para Web. Desenvolvido por Victor, Petrus e Ramon.</p>
-        <p>Dados baseados em registros da Polícia Rodoviária Federal (PRF) - 2025.</p>
+    <!-- Módulo 2: Visualizações e Análises -->
+    <section class="charts-section">
+        <!-- Mapa de Risco Interativo -->
+        <div class="card map-card">
+            <div class="card-header">
+                <h3>Mapa Interativo de Risco por Estado (UF)</h3>
+                <span class="badge">Geolocalização PRF</span>
+            </div>
+            <div id="map" class="map-container"></div>
+        </div>
+
+        <!-- Evolução Mensal -->
+        <div class="card chart-card">
+            <div class="card-header">
+                <h3>Evolução Mensal dos Acidentes (2025)</h3>
+            </div>
+            <div class="chart-container">
+                <canvas id="chart-evolucao"></canvas>
+            </div>
+        </div>
+
+        <!-- Modalidades (Tipo de Acidente) -->
+        <div class="card chart-card">
+            <div class="card-header">
+                <h3>Distribuição por Tipo de Acidente</h3>
+            </div>
+            <div class="chart-container">
+                <canvas id="chart-tipos"></canvas>
+            </div>
+        </div>
+
+        <!-- Principais Causas -->
+        <div class="card chart-card">
+            <div class="card-header">
+                <h3>Principais Causas de Acidentes</h3>
+            </div>
+            <div class="chart-container">
+                <canvas id="chart-causas"></canvas>
+            </div>
+        </div>
+
+        <!-- Top Rodovias Críticas -->
+        <div class="card chart-card full-width">
+            <div class="card-header">
+                <h3>Ranking das Top 10 Rodovias Federais Mais Perigosas (ICR)</h3>
+            </div>
+            <div class="chart-container-large">
+                <canvas id="chart-rodovias"></canvas>
+            </div>
+        </div>
+    </section>
+
+    <!-- Módulo 3: Tabela Detalhada de Ocorrências -->
+    <section class="table-section">
+        <div class="card">
+            <div class="card-header">
+                <h3>Detalhamento das Ocorrências Registradas</h3>
+                <div class="table-search">
+                    <input type="text" id="table-search-input" placeholder="Buscar por município ou causa...">
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table" id="table-ocorrencias">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Data</th>
+                            <th>Hora</th>
+                            <th>UF</th>
+                            <th>BR</th>
+                            <th>KM</th>
+                            <th>Município</th>
+                            <th>Tipo Acidente</th>
+                            <th>Causa Principal</th>
+                            <th>Classificação</th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body">
+                        <!-- Conteúdo dinâmico via JS -->
+                    </tbody>
+                </table>
+            </div>
+            <div class="table-pagination">
+                <span id="pagination-info">Exibindo 1-20 de 45.532 ocorrências</span>
+                <div class="pagination-buttons">
+                    <button id="btn-prev-page" class="btn-page" disabled>Anterior</button>
+                    <button id="btn-next-page" class="btn-page">Próximo</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer Institucional -->
+    <footer class="footer">
+        <p>Projeto Final Programação para Web — UFCA | Dashboard de Acidentes nas Rodovias Federais (PRF 2025)</p>
+        <p class="credits">Equipe: Ramon | Petrus | Victor</p>
     </footer>
 
+    <!-- Dados -->
+    <script src="js\dados.js"></script>
+
+    <!-- Aplicação JavaScript -->
+    <script src="js\app.js"></script>
 </body>
 </html>
