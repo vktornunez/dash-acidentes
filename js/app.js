@@ -1,5 +1,5 @@
 /* =============================================================================
-   PROJETO INTEGRADO - FRONTEND (DADOS VIA CSV LOCAL)
+   FRONTEND (DADOS VIA CSV LOCAL)
    Lógica do Dashboard carregando acidentes2025.csv
    ============================================================================= */
 
